@@ -3,7 +3,7 @@ Summary(pl):	Przekieruj po³±czenia TCP
 Summary(pt_BR):	Redir é um redirecionador de conexões
 Name:		redir
 Version:	2.2.1
-Release:	1
+Release:	2
 License:	GPL
 Vendor:		Sammy <sammy@oh.verio.com>
 Group:		Applications/Networking
