@@ -20,7 +20,7 @@ Redir redirects tcp connections coming in to a local port to a
 specified address/port combination.
 
 %description -l pl
-Redir przekierowuje po³±czenia tcp przychodz±ce na okre¶lony lokalnyt
+Redir przekierowuje po³±czenia tcp przychodz±ce na okre¶lony lokalny
 port na podany inny adres oraz port.
 
 %description -l pt_BR
