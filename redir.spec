@@ -2,8 +2,8 @@ Summary:	redirect TCP connections
 Summary(pl):	Przekieruj po³±czenia TCP
 Name:		redir
 Version:	2.2
-Release:	GPL
-License:	BSD
+Release:	1
+License:	GPL
 Group:		Applications/Networking
 Group(de):	Applikationen/Netzwerkwesen
 Group(pl):	Aplikacje/Sieciowe
