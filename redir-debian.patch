@@ -1,26 +1,30 @@
-diff -urN redir-2.2.org/Makefile redir-2.2/Makefile
---- redir-2.2.org/Makefile	Thu Feb 22 14:39:29 2001
-+++ redir-2.2/Makefile	Thu Feb 22 14:50:12 2001
-@@ -5,12 +5,12 @@
+--- redir-2.2.1/Makefile.orig	Fri Feb 28 20:37:30 2003
++++ redir-2.2.1/Makefile	Fri Feb 28 20:38:38 2003
+@@ -9,8 +9,8 @@
+ # if you would like support for TCP wrappers (and have libwrap.a
+ # installed), remove these comments.
  
- # if your system lacks strrchr() or strdup(), or you want TCP wrappers
- # support, edit this line
--CFLAGS = -O2 -Wall # -DUSE_TCP_WRAPPERS # -DNEED_STRRCHR -DNEED_STRDUP
+-WRAP_CFLAGS = # -DUSE_TCP_WRAPPERS 
+-WRAP_LIBS = # -lwrap
++WRAP_CFLAGS =  -DUSE_TCP_WRAPPERS 
++WRAP_LIBS =  -lwrap
+ 
+ # if your system needs any additional libraries (solaris, for example, 
+ # needs the ones commented out below), edit this line.
+@@ -32,8 +32,8 @@
+ # if your system lacks getopt_long, remove the comment from this line
+ OBJS = redir.o $(GETOPT_OBJS)
+ 
+-CFLAGS = -O2 -Wall $(STR_CFLAGS) $(WRAP_CFLAGS) $(EXTRA_CFLAGS)
 -LDFLAGS = -s
 +CFLAGS = $(OPT_FLAGS) -Wall -DUSE_TCP_WRAPPERS # -DNEED_STRRCHR -DNEED_STRDUP
 +LDFLAGS = -g
  
  # solaris, and others, may also need these libraries to link
  # also edit here if you're using the TCP wrappers code
--LIBS = #-lwrap #-lnsl -lsocket
-+LIBS = -lwrap #-lnsl -lsocket
- # this line should build under os/2 using syslog from
- # http://r350.ee.ntu.edu.tw/~hcchu/os2/ports/dev
- # submitted by: Doug LaRue (dlarue@nosc.mil)
-diff -urN redir-2.2.org/redir.c redir-2.2/redir.c
---- redir-2.2.org/redir.c	Thu Feb 22 14:39:29 2001
-+++ redir-2.2/redir.c	Thu Feb 22 14:55:31 2001
-@@ -69,6 +69,7 @@
+--- redir-2.2.1/redir.c.orig	Fri Feb 28 20:38:55 2003
++++ redir-2.2.1/redir.c	Fri Feb 28 20:41:34 2003
+@@ -72,6 +72,7 @@
  #include <syslog.h>
  #include <sys/types.h>
  #include <sys/socket.h>
@@ -28,12 +32,16 @@ diff -urN redir-2.2.org/redir.c redir-2.2/redir.c
  #include <sys/time.h>
  #include <sys/wait.h>
  #include <netinet/in.h>
-@@ -601,11 +602,11 @@
+@@ -510,7 +511,7 @@
+ 		perror("getsockname");
  		if (dosyslog)
- 			syslog(LOG_ERR, "accept failed: %m");
- 
+ 			syslog(LOG_ERR, "getsockname failed: %m");
 -		exit(1);
 +		return;
+ 	}
+ 
+ 	lport = ntohs(sockname.sin_port);
+@@ -745,7 +746,7 @@
  	}
       
  	debug1("peer IP is %s\n", inet_ntoa(client.sin_addr));
@@ -42,18 +50,18 @@ diff -urN redir-2.2.org/redir.c redir-2.2/redir.c
  
  	/*
  	 * Double fork here so we don't have to wait later
-@@ -731,8 +732,8 @@
+@@ -871,8 +872,8 @@
  		strcpy(tmp2, inet_ntoa(target->sin_addr));
  	  
  		syslog(LOG_NOTICE, "connecting %s/%d to %s/%d",
 -		       tmp1, client.sin_port,
 -		       tmp2, target->sin_port);
-+		       tmp1, ntohs(client.sin_port),
-+		       tmp2, ntohs(target->sin_port));
++                       tmp1, ntohs(client.sin_port),
++                       tmp2, ntohs(target->sin_port));
  	}
  
  	/* do proxy stuff */
-@@ -911,7 +912,7 @@
+@@ -1066,7 +1067,7 @@
  
  		if (!getpeername(0, (struct sockaddr *) &client, &client_size)) {
  			debug1("peer IP is %s\n", inet_ntoa(client.sin_addr));
@@ -62,7 +70,7 @@ diff -urN redir-2.2.org/redir.c redir-2.2/redir.c
  		}
  		if ((targetsock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
  			perror("target: socket");
-@@ -954,8 +955,8 @@
+@@ -1109,8 +1110,8 @@
  
  		if (dosyslog) {
  			syslog(LOG_NOTICE, "connecting %s/%d to %s/%d",
