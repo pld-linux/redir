@@ -1,5 +1,6 @@
 Summary:	redirect TCP connections
 Summary(pl):	Przekieruj po³±czenia TCP
+Summary(pt_BR):	Redir é um redirecionador de conexões
 Name:		redir
 Version:	2.2
 Release:	2
@@ -20,6 +21,9 @@ specified address/port combination.
 %description -l pl
 Redir przekierowuje po³±czenia tcp przychodz±ce na okre¶lony lokalnyt
 port na podany inny adres oraz port.
+
+%description -l pt_BR
+Redir é um redirecionador de conexões.
 
 %prep
 %setup  -q
