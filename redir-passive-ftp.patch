@@ -1,0 +1,80 @@
+--- redir-2.2/redir-old.c	Wed Dec 15 12:51:37 1999
++++ redir-2.2/redir.c	Thu Aug  8 14:55:29 2002
+@@ -57,6 +57,11 @@
+  *	  
+  *   - harald <harald.holzer@eunet.at>
+  */
++
++/* 020808 fixed bug with ftp passive connections.
++ *	  
++ *   - Harmer <harmer@nasa.as>
++ */
+  
+ #define  VERSION "2.2"
+ 
+@@ -90,6 +95,7 @@
+ unsigned char linger_opt = 0;
+ char * bind_addr = NULL;
+ struct sockaddr_in addr_out;
++struct sockaddr_in target;
+ int timeout = 0;
+ int ftp = 0;
+ int transproxy = 0;
+@@ -420,8 +426,7 @@
+ 	}
+ 	newsession.sin_port = htons(rport);
+ 	newsession.sin_family = AF_INET;
+-	newsession.sin_addr.s_addr = remip[0] | (remip[1] << 8)
+-		| (remip[2] << 16) | (remip[3] << 24);
++	newsession.sin_addr = target.sin_addr;
+ 
+ 	debug1("ftpdata server ip: %s\n", inet_ntoa(newsession.sin_addr));
+ 	debug1("ftpdata server port: %d\n", rport);
+@@ -839,7 +844,6 @@
+ main(int argc, char *argv[])
+ {
+ 
+-	struct sockaddr_in target;
+ 	char *target_addr;
+ 	int target_port;
+ 	char *local_addr;
+--- redir-2.2/redir-old.c	Wed Dec 15 12:51:37 1999
++++ redir-2.2/redir.c	Thu Aug  8 14:55:29 2002
+@@ -57,6 +57,11 @@
+  *	  
+  *   - harald <harald.holzer@eunet.at>
+  */
++
++/* 020808 fixed bug with ftp passive connections.
++ *	  
++ *   - Harmer <harmer@nasa.as>
++ */
+  
+ #define  VERSION "2.2"
+ 
+@@ -90,6 +95,7 @@
+ unsigned char linger_opt = 0;
+ char * bind_addr = NULL;
+ struct sockaddr_in addr_out;
++struct sockaddr_in target;
+ int timeout = 0;
+ int ftp = 0;
+ int transproxy = 0;
+@@ -420,8 +426,7 @@
+ 	}
+ 	newsession.sin_port = htons(rport);
+ 	newsession.sin_family = AF_INET;
+-	newsession.sin_addr.s_addr = remip[0] | (remip[1] << 8)
+-		| (remip[2] << 16) | (remip[3] << 24);
++	newsession.sin_addr = target.sin_addr;
+ 
+ 	debug1("ftpdata server ip: %s\n", inet_ntoa(newsession.sin_addr));
+ 	debug1("ftpdata server port: %d\n", rport);
+@@ -839,7 +844,6 @@
+ main(int argc, char *argv[])
+ {
+ 
+-	struct sockaddr_in target;
+ 	char *target_addr;
+ 	int target_port;
+ 	char *local_addr;
