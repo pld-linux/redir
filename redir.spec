@@ -8,6 +8,7 @@ License:	GPL
 Vendor:		Sammy <sammy@oh.verio.com>
 Group:		Applications/Networking
 Source0:	http://sammy.net/~sammy/hacks/%{name}-%{version}.tar.gz
+# Source0-md5:	4342fadac30504c86c8db7beefe01995
 Patch0:		%{name}-debian.patch
 Patch1:		%{name}-passive-ftp.patch
 URL:		http://sammy.net/~sammy/hacks/
