@@ -1,0 +1,75 @@
+diff -urN redir-2.2.org/Makefile redir-2.2/Makefile
+--- redir-2.2.org/Makefile	Thu Feb 22 14:39:29 2001
++++ redir-2.2/Makefile	Thu Feb 22 14:50:12 2001
+@@ -5,12 +5,12 @@
+ 
+ # if your system lacks strrchr() or strdup(), or you want TCP wrappers
+ # support, edit this line
+-CFLAGS = -O2 -Wall # -DUSE_TCP_WRAPPERS # -DNEED_STRRCHR -DNEED_STRDUP
+-LDFLAGS = -s
++CFLAGS = $(OPT_FLAGS) -Wall -DUSE_TCP_WRAPPERS # -DNEED_STRRCHR -DNEED_STRDUP
++LDFLAGS = -g
+ 
+ # solaris, and others, may also need these libraries to link
+ # also edit here if you're using the TCP wrappers code
+-LIBS = #-lwrap #-lnsl -lsocket
++LIBS = -lwrap #-lnsl -lsocket
+ # this line should build under os/2 using syslog from
+ # http://r350.ee.ntu.edu.tw/~hcchu/os2/ports/dev
+ # submitted by: Doug LaRue (dlarue@nosc.mil)
+diff -urN redir-2.2.org/redir.c redir-2.2/redir.c
+--- redir-2.2.org/redir.c	Thu Feb 22 14:39:29 2001
++++ redir-2.2/redir.c	Thu Feb 22 14:55:31 2001
+@@ -69,6 +69,7 @@
+ #include <syslog.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
++#include <time.h>
+ #include <sys/time.h>
+ #include <sys/wait.h>
+ #include <netinet/in.h>
+@@ -601,11 +602,11 @@
+ 		if (dosyslog)
+ 			syslog(LOG_ERR, "accept failed: %m");
+ 
+-		exit(1);
++		return;
+ 	}
+      
+ 	debug1("peer IP is %s\n", inet_ntoa(client.sin_addr));
+-	debug1("peer socket is %d\n", client.sin_port);
++	debug1("peer socket is %d\n", ntohs(client.sin_port));
+ 
+ 	/*
+ 	 * Double fork here so we don't have to wait later
+@@ -731,8 +732,8 @@
+ 		strcpy(tmp2, inet_ntoa(target->sin_addr));
+ 	  
+ 		syslog(LOG_NOTICE, "connecting %s/%d to %s/%d",
+-		       tmp1, client.sin_port,
+-		       tmp2, target->sin_port);
++		       tmp1, ntohs(client.sin_port),
++		       tmp2, ntohs(target->sin_port));
+ 	}
+ 
+ 	/* do proxy stuff */
+@@ -911,7 +912,7 @@
+ 
+ 		if (!getpeername(0, (struct sockaddr *) &client, &client_size)) {
+ 			debug1("peer IP is %s\n", inet_ntoa(client.sin_addr));
+-			debug1("peer socket is %d\n", client.sin_port);
++			debug1("peer socket is %d\n", ntohs(client.sin_port));
+ 		}
+ 		if ((targetsock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+ 			perror("target: socket");
+@@ -954,8 +955,8 @@
+ 
+ 		if (dosyslog) {
+ 			syslog(LOG_NOTICE, "connecting %s/%d to %s/%d",
+-			       inet_ntoa(client.sin_addr), client.sin_port,
+-			       target_ip, target.sin_port);
++			       inet_ntoa(client.sin_addr), ntohs(client.sin_port),
++			       target_ip, ntohs(target.sin_port));
+ 		}
+ 
+ 		/* Just start copying - one side of the loop is stdin - 0 */
