@@ -2,12 +2,13 @@ Summary:	redirect TCP connections
 Summary(pl):	Przekieruj po³±czenia TCP
 Name:		redir
 Version:	2.2
-Release:	1
+Release:	2
 License:	GPL
+Vendor:		Sammy <sammy@oh.verio.com>
 Group:		Applications/Networking
 Source0:	ftp://metalab.unc.edu:/pub/linux/system/network/daemons/%{name}-%{version}.tar.gz
 Patch0:		%{name}-debian.patch
-Vendor:		Sammy <sammy@oh.verio.com>
+Patch1:		%{name}-passive-ftp.patch
 BuildRequires:	libwrap-devel
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
@@ -24,22 +25,20 @@ port na podany inny adres oraz port.
 %patch0 -p1
 
 %build
-%{__make} OPT_FLAGS="%{rpmcflags}"
+%{__make} OPT_FLAGS="%{rpmcflags}" CC=%{__cc}
 
 %install
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT{%{_sbindir},%{_mandir}/man1}
 
-install redir		$RPM_BUILD_ROOT%{_sbindir}
-install redir.man	$RPM_BUILD_ROOT%{_mandir}/man1
-
-gzip -9nf README trans*.txt
+install redir $RPM_BUILD_ROOT%{_sbindir}
+install redir.man $RPM_BUILD_ROOT%{_mandir}/man1
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644,root,root,755)
-%doc *.gz
+%doc README trans*.txt
 %attr(755,root,root) %{_sbindir}/*
 %{_mandir}/man*/*
