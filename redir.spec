@@ -5,8 +5,6 @@ Version:	2.2
 Release:	1
 License:	GPL
 Group:		Applications/Networking
-Group(de):	Applikationen/Netzwerkwesen
-Group(pl):	Aplikacje/Sieciowe
 Source0:	ftp://metalab.unc.edu:/pub/linux/system/network/daemons/%{name}-%{version}.tar.gz
 Patch0:		%{name}-debian.patch
 Vendor:		Sammy <sammy@oh.verio.com>
