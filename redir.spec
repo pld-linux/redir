@@ -6,9 +6,10 @@ Release:	2
 License:	GPL
 Vendor:		Sammy <sammy@oh.verio.com>
 Group:		Applications/Networking
-Source0:	ftp://metalab.unc.edu:/pub/linux/system/network/daemons/%{name}-%{version}.tar.gz
+Source0:	http://sammy.net/~sammy/hacks/%{name}-%{version}.tar.gz
 Patch0:		%{name}-debian.patch
 Patch1:		%{name}-passive-ftp.patch
+URL:		http://sammy.net/~sammy/hacks/
 BuildRequires:	libwrap-devel
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
