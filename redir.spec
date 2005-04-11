@@ -1,11 +1,10 @@
 Summary:	redirect TCP connections
-Summary(pl):	Przekieruj po³±czenia TCP
+Summary(pl):	Przekierowywanie po³±czeñ TCP
 Summary(pt_BR):	Redir é um redirecionador de conexões
 Name:		redir
 Version:	2.2.1
 Release:	2
 License:	GPL
-Vendor:		Sammy <sammy@oh.verio.com>
 Group:		Applications/Networking
 Source0:	http://sammy.net/~sammy/hacks/%{name}-%{version}.tar.gz
 # Source0-md5:	4342fadac30504c86c8db7beefe01995
@@ -31,7 +30,9 @@ Redir é um redirecionador de conexões.
 %patch0 -p1
 
 %build
-%{__make} OPT_FLAGS="%{rpmcflags}" CC=%{__cc}
+%{__make} \
+	OPT_FLAGS="%{rpmcflags}" \
+	CC="%{__cc}"
 
 %install
 rm -rf $RPM_BUILD_ROOT
