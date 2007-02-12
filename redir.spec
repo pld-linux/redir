@@ -1,6 +1,6 @@
 Summary:	redirect TCP connections
-Summary(pl.UTF-8):   Przekierowywanie połączeń TCP
-Summary(pt_BR.UTF-8):   Redir é um redirecionador de conexões
+Summary(pl.UTF-8):	Przekierowywanie połączeń TCP
+Summary(pt_BR.UTF-8):	Redir é um redirecionador de conexões
 Name:		redir
 Version:	2.2.1
 Release:	2
