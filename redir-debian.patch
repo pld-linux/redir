@@ -1,47 +1,75 @@
---- redir-2.2.1/Makefile.orig	Fri Feb 28 20:37:30 2003
-+++ redir-2.2.1/Makefile	Fri Feb 28 20:38:38 2003
-@@ -9,8 +9,8 @@
- # if you would like support for TCP wrappers (and have libwrap.a
- # installed), remove these comments.
- 
--WRAP_CFLAGS = # -DUSE_TCP_WRAPPERS 
--WRAP_LIBS = # -lwrap
-+WRAP_CFLAGS =  -DUSE_TCP_WRAPPERS 
-+WRAP_LIBS =  -lwrap
- 
- # if your system needs any additional libraries (solaris, for example, 
- # needs the ones commented out below), edit this line.
-@@ -32,8 +32,8 @@
- # if your system lacks getopt_long, remove the comment from this line
- OBJS = redir.o $(GETOPT_OBJS)
- 
--CFLAGS = -O2 -Wall $(STR_CFLAGS) $(WRAP_CFLAGS) $(EXTRA_CFLAGS)
--LDFLAGS = -s
-+CFLAGS = $(OPT_FLAGS) -Wall -DUSE_TCP_WRAPPERS # -DNEED_STRRCHR -DNEED_STRDUP
-+LDFLAGS = -g
- 
- # solaris, and others, may also need these libraries to link
- # also edit here if you're using the TCP wrappers code
---- redir-2.2.1/redir.c.orig	Fri Feb 28 20:38:55 2003
-+++ redir-2.2.1/redir.c	Fri Feb 28 20:41:34 2003
-@@ -72,6 +72,7 @@
- #include <syslog.h>
- #include <sys/types.h>
- #include <sys/socket.h>
-+#include <time.h>
- #include <sys/time.h>
- #include <sys/wait.h>
- #include <netinet/in.h>
-@@ -510,7 +511,7 @@
- 		perror("getsockname");
- 		if (dosyslog)
- 			syslog(LOG_ERR, "getsockname failed: %m");
--		exit(1);
-+		return;
- 	}
- 
- 	lport = ntohs(sockname.sin_port);
-@@ -745,7 +746,7 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 01_fix_max_bandwidth_docs.dpatch by Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Fix docs and --help to show --max_bandwidth instead of --maxbandwidth
+
+@DPATCH@
+diff -urNad redir-2.2.1~/redir.c redir-2.2.1/redir.c
+--- redir-2.2.1~/redir.c	1999-12-26 15:50:06.000000000 -0500
++++ redir-2.2.1/redir.c	2005-10-22 21:21:56.849499952 -0400
+@@ -233,7 +233,7 @@
+ #ifndef NO_SHAPER
+         /* options for bandwidth */
+         fprintf(stderr, "\t\t--bufsize=<octets>\tsize of the buffer\n");
+-        fprintf(stderr, "\t\t--maxbandwidth=<bit-per-sec>\tlimit the bandwidth\n");
++        fprintf(stderr, "\t\t--max_bandwidth=<bit-per-sec>\tlimit the bandwidth\n");
+         fprintf(stderr, "\t\t--random_wait=<millisec>\twait before each packet\n");
+         fprintf(stderr, "\t\t--wait_in_out=<flag>\t1 wait for in, 2 out, 3 in&out\n");
+         /* end options for bandwidth */
+diff -urNad redir-2.2.1~/redir.man redir-2.2.1/redir.man
+--- redir-2.2.1~/redir.man	1999-12-26 15:52:24.000000000 -0500
++++ redir-2.2.1/redir.man	2005-10-22 21:22:28.882630176 -0400
+@@ -18,7 +18,7 @@
+ .I --lport=port
+ .I --cport=port
+ .RB [ \--bufsize=n ]
+-.RB [ \--maxbandwidth=n ]
++.RB [ \--max_bandwidth=n ]
+ .RB [ \--random_wait=n ]
+ .RB [ \--wait_in_out=n ]
+ .ll -8
+@@ -35,7 +35,7 @@
+ .RB [ \--connect=host:port ]
+ .I --cport=port
+ .RB [ \--bufsize=n ]
+-.RB [ \--maxbandwidth=n ]
++.RB [ \--max_bandwidth=n ]
+ .RB [ \--random_wait=n ]
+ .RB [ \--wait_in_out=n ]
+ .ll -8
+@@ -102,9 +102,9 @@
+ .TP
+ .B \--bufsize n
+ Set the bufsize (defaut 4096) in bytes. Can be used combined with
+---maxbandwidth or --random_wait to simulate a slow connection.
++--max_bandwidth or --random_wait to simulate a slow connection.
+ .TP
+-.B \--maxbandwidth n
++.B \--max_bandwidth n
+ Reduce the bandwidth to be no more than n bits/sec.  The algorithme is
+ basic, the goal is to simulate a slow connection, so there is no pic
+ acceptance.
+@@ -115,7 +115,7 @@
+ than the bufsize (see also --bufsize).
+ .TP
+ .B \--wait_in_out n
+-Apply --maxbandwidth and --random_wait for input if n=1, output if n=2 and
++Apply --max_bandwidth and --random_wait for input if n=1, output if n=2 and
+ both if n=3.
+ .SH "SEE ALSO"
+ inetd(1)
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 02_use_ntohs.dpatch by Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: use ntohs() to generate comprehensible debug()s and syslog()s.
+
+@DPATCH@
+diff -urNad redir-2.2.1~/redir.c redir-2.2.1/redir.c
+--- redir-2.2.1~/redir.c	1999-12-26 15:50:06.000000000 -0500
++++ redir-2.2.1/redir.c	2005-10-22 21:29:55.491735272 -0400
+@@ -745,7 +745,7 @@
  	}
       
  	debug1("peer IP is %s\n", inet_ntoa(client.sin_addr));
@@ -50,18 +78,18 @@
  
  	/*
  	 * Double fork here so we don't have to wait later
-@@ -871,8 +872,8 @@
+@@ -871,8 +871,8 @@
  		strcpy(tmp2, inet_ntoa(target->sin_addr));
  	  
  		syslog(LOG_NOTICE, "connecting %s/%d to %s/%d",
 -		       tmp1, client.sin_port,
 -		       tmp2, target->sin_port);
-+                       tmp1, ntohs(client.sin_port),
-+                       tmp2, ntohs(target->sin_port));
++		       tmp1, ntohs(client.sin_port),
++		       tmp2, ntohs(target->sin_port));
  	}
  
  	/* do proxy stuff */
-@@ -1066,7 +1067,7 @@
+@@ -1066,7 +1066,7 @@
  
  		if (!getpeername(0, (struct sockaddr *) &client, &client_size)) {
  			debug1("peer IP is %s\n", inet_ntoa(client.sin_addr));
@@ -70,7 +98,7 @@
  		}
  		if ((targetsock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
  			perror("target: socket");
-@@ -1109,8 +1110,8 @@
+@@ -1109,8 +1109,8 @@
  
  		if (dosyslog) {
  			syslog(LOG_NOTICE, "connecting %s/%d to %s/%d",
@@ -81,3 +109,682 @@
  		}
  
  		/* Just start copying - one side of the loop is stdin - 0 */
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 03_fix_tcp_wrappers.dpatch by Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: fix calls to tcp wrappers
+
+@DPATCH@
+diff -urNad redir-2.2.1~/redir.c redir-2.2.1/redir.c
+--- redir-2.2.1~/redir.c	2005-10-22 22:10:11.439455392 -0400
++++ redir-2.2.1/redir.c	2005-10-22 22:10:51.625346208 -0400
+@@ -802,8 +802,8 @@
+ #ifdef USE_TCP_WRAPPERS
+ 	request_init(&request, RQ_DAEMON, ident, RQ_FILE, clisock, 0);
+ 	sock_host(&request);
+-	sock_hostname(&request);
+-	sock_hostaddr(&request);
++	sock_hostname(request.client);
++	sock_hostaddr(request.client);
+ 
+ 	if (!hosts_access(&request)) {
+ 		refuse(&request);
+@@ -1057,8 +1057,8 @@
+ #ifdef USE_TCP_WRAPPERS
+ 		request_init(&request, RQ_DAEMON, ident, RQ_FILE, 0, 0);
+ 		sock_host(&request);
+-		sock_hostname(&request);
+-		sock_hostaddr(&request);
++		sock_hostname(request.client);
++		sock_hostaddr(request.client);
+ 	
+ 		if (!hosts_access(&request))
+ 			refuse(&request);
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 04_fix_timeouts.dpatch by Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Apply a close approximation of Robert de Bath's patch for bug #142382
+
+@DPATCH@
+diff -urNad redir-2.2.1~/redir.c redir-2.2.1/redir.c
+--- redir-2.2.1~/redir.c	2005-10-22 22:44:39.504061784 -0400
++++ redir-2.2.1/redir.c	2005-10-22 22:47:14.746461352 -0400
+@@ -598,10 +598,6 @@
+ 	/* Record start time */
+ 	start_time = (unsigned int) time(NULL);
+ 
+-	/* Set up timeout */
+-	timeout.tv_sec = timeout_secs;
+-	timeout.tv_usec = 0;
+-
+ 	/* file descriptor bits */
+ 	FD_ZERO(&iofds);
+ 	FD_SET(insock, &iofds);
+@@ -618,14 +614,21 @@
+ 	while(1) {
+ 		(void) memcpy(&c_iofds, &iofds, sizeof(iofds));
+ 
++		/* Set up timeout, Linux returns seconds left in this structure
++		 * so we have to reset it before each select(). */
++		timeout.tv_sec = timeout_secs;
++		timeout.tv_usec = 0;
++
+ 
+ 		if (select(max_fd + 1,
+ 			   &c_iofds,
+ 			   (fd_set *)0,
+ 			   (fd_set *)0,
+ 			   (timeout_secs ? &timeout : NULL)) <= 0) {
+-			/*	    syslog(LLEV,"connection timeout: %d sec",timeout.tv_sec);*/
+-			break;
++		  if (dosyslog) {
++		    syslog(LOG_NOTICE,"connection timeout: %d sec",timeout_secs);
++		  }
++		  break;
+ 		}
+ 
+ 		if(FD_ISSET(insock, &c_iofds)) {
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 05_pedantic.dpatch by Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: changes to make clean up compilation
+
+@DPATCH@
+diff -urNad redir-2.2.1~/Makefile redir-2.2.1/Makefile
+--- redir-2.2.1~/Makefile	2005-10-22 23:11:41.000000000 -0400
++++ redir-2.2.1/Makefile	2005-10-22 23:11:48.818368360 -0400
+@@ -32,7 +32,7 @@
+ # if your system lacks getopt_long, remove the comment from this line
+ OBJS = redir.o $(GETOPT_OBJS)
+ 
+-CFLAGS = -O2 -Wall $(STR_CFLAGS) $(WRAP_CFLAGS) $(EXTRA_CFLAGS)
++CFLAGS = -O2 -Wall --pedantic $(STR_CFLAGS) $(WRAP_CFLAGS) $(EXTRA_CFLAGS)
+ LDFLAGS = -s
+ 
+ # solaris, and others, may also need these libraries to link
+diff -urNad redir-2.2.1~/redir.c redir-2.2.1/redir.c
+--- redir-2.2.1~/redir.c	2005-10-22 23:11:48.282449832 -0400
++++ redir-2.2.1/redir.c	2005-10-22 23:12:23.201141384 -0400
+@@ -73,6 +73,7 @@
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <sys/time.h>
++#include <time.h>
+ #include <sys/wait.h>
+ #include <netinet/in.h>
+ #include <arpa/inet.h>
+@@ -460,7 +461,7 @@
+ 	int lport, rport;
+ 	int remip[4];
+ 	int localsock;
+-	int socksize = sizeof(struct sockaddr_in);
++	size_t socksize = sizeof(struct sockaddr_in);
+ 
+ 	struct sockaddr_in newsession;
+ 	struct sockaddr_in sockname;
+@@ -509,7 +510,7 @@
+ 	if(getsockname(localsock, (struct sockaddr *)&sockname, &socksize) < 0) {
+ 		perror("getsockname");
+ 		if (dosyslog)
+-			syslog(LOG_ERR, "getsockname failed: %m");
++			syslog(LOG_ERR, "getsockname failed: %s",strerror(errno));
+ 		exit(1);
+ 	}
+ 
+@@ -562,7 +563,7 @@
+ 	switch(fork())
+ 	{
+      	case -1: /* Error */
+-     		syslog(LOG_ERR, "Couldn't fork: %m");
++     		syslog(LOG_ERR, "Couldn't fork: %s",strerror(errno));
+      		_exit(1);
+      	case 0:  /* Child */
+ 	{
+@@ -723,7 +724,7 @@
+ 	int clisock;
+ 	int targetsock;
+ 	struct sockaddr_in client;
+-	int clientlen = sizeof(client);
++	size_t clientlen = sizeof(client);
+ 	int accept_errno;
+      
+ 	debug("top of accept loop\n");
+@@ -734,7 +735,7 @@
+ 		perror("server: accept");
+ 
+ 		if (dosyslog)
+-			syslog(LOG_ERR, "accept failed: %m");
++			syslog(LOG_ERR, "accept failed: %s",strerror(errno));
+ 
+ 		/* determine if this error is fatal */
+ 		switch(accept_errno) {
+@@ -768,7 +769,7 @@
+      		perror("(server) fork");
+ 
+      		if (dosyslog)
+-     			syslog(LOG_ERR, "(server) fork failed: %m");
++     			syslog(LOG_ERR, "(server) fork failed: %s",strerror(errno));
+ 
+      		_exit(1);
+      	case 0:  /* Child */
+@@ -795,7 +796,7 @@
+      		perror("(child) fork");
+ 
+      		if (dosyslog)
+-     			syslog(LOG_ERR, "(child) fork failed: %m");
++     			syslog(LOG_ERR, "(child) fork failed: %s",strerror(errno));
+ 
+      		_exit(1);
+      	case 0:  /* Child */
+@@ -826,7 +827,7 @@
+ 		perror("target: socket");
+ 	  
+ 		if (dosyslog)
+-			syslog(LOG_ERR, "socket failed: %m");
++			syslog(LOG_ERR, "socket failed: %s",strerror(errno));
+ 		
+ 		_exit(1);
+ 	}
+@@ -850,7 +851,7 @@
+    only be different if the input value is 0 (let the system pick a 
+    port) */
+ 			if (dosyslog)
+-				syslog(LOG_ERR, "bind failed: %m");
++				syslog(LOG_ERR, "bind failed: %s",strerror(errno));
+ 
+ 			_exit(1);
+ 		}
+@@ -862,7 +863,7 @@
+ 		perror("target: connect");
+ 
+ 		if (dosyslog)
+-			syslog(LOG_ERR, "bind failed: %m");
++			syslog(LOG_ERR, "bind failed: %s",strerror(errno));
+ 
+ 		_exit(1);
+ 	}
+@@ -923,7 +924,7 @@
+ 			perror("server: socket");
+ 
+ 			if (dosyslog)
+-				syslog(LOG_ERR, "socket failed: %m");
++				syslog(LOG_ERR, "socket failed: %s",strerror(errno));
+ 
+ 			exit(1);
+ 		}
+@@ -962,7 +963,7 @@
+ 			perror("server: bind");
+ 
+ 			if (dosyslog)
+-				syslog(LOG_ERR, "bind failed: %m");
++				syslog(LOG_ERR, "bind failed: %s",strerror(errno));
+ 
+ 			exit(1);
+ 		}
+@@ -980,7 +981,7 @@
+ 			perror("server: listen");
+ 
+ 			if (dosyslog)
+-				syslog(LOG_ERR, "listen failed: %m");
++				syslog(LOG_ERR, "listen failed: %s",strerror(errno));
+ 
+ 			exit(1);
+ 		}
+@@ -1059,7 +1060,7 @@
+ 	if (inetd) {
+ 		int targetsock;
+ 		struct sockaddr_in client;
+-		int client_size = sizeof(client);
++		size_t client_size = sizeof(client);
+ 
+ #ifdef USE_TCP_WRAPPERS
+ 		request_init(&request, RQ_DAEMON, ident, RQ_FILE, 0, 0);
+@@ -1079,7 +1080,7 @@
+ 			perror("target: socket");
+ 
+ 			if (dosyslog)
+-				syslog(LOG_ERR, "targetsock failed: %m");
++				syslog(LOG_ERR, "targetsock failed: %s",strerror(errno));
+ 
+ 			exit(1);
+ 		}
+@@ -1097,7 +1098,7 @@
+ 				perror("bind_addr: cannot bind to forcerd outgoing addr");
+ 				 
+ 				if (dosyslog)
+-					syslog(LOG_ERR, "bind failed: %m");
++					syslog(LOG_ERR, "bind failed: %s",strerror(errno));
+ 				 
+ 				exit(1);
+ 			}
+@@ -1109,7 +1110,7 @@
+ 			perror("target: connect");
+ 
+ 			if (dosyslog)
+-				syslog(LOG_ERR, "connect failed: %m");
++				syslog(LOG_ERR, "connect failed: %s",strerror(errno));
+ 
+ 			exit(1);
+ 		}
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 06_fix_shaper_buffer.dpatch by Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: properly allocate copyloop buffer
+
+@DPATCH@
+diff -urNad redir-2.2.1~/redir.c redir-2.2.1/redir.c
+--- redir-2.2.1~/redir.c	2005-10-22 23:20:05.235901424 -0400
++++ redir-2.2.1/redir.c	2005-10-22 23:22:20.198384008 -0400
+@@ -260,7 +260,7 @@
+ #endif
+ 	   int *transproxy,
+ #ifndef NO_SHAPER
+-           unsigned int * bufsize,
++           unsigned int * bufsizeout,
+            int * max_bandwidth,
+            int * random_wait,
+            int * wait_in_out,
+@@ -367,7 +367,7 @@
+ 
+ #ifndef NO_SHAPER
+                 case 'z':
+-                  *bufsize = (unsigned int)atol(optarg);
++                  *bufsizeout = (unsigned int)atol(optarg);
+                   break;
+  
+                 case 'm':
+@@ -594,7 +594,7 @@
+ 	unsigned long bytes_in = 0;
+ 	unsigned long bytes_out = 0;
+ 	unsigned int start_time, end_time;
+-	char buf[bufsize];
++	char* buf = malloc(bufsize);
+ 
+ 	/* Record start time */
+ 	start_time = (unsigned int) time(NULL);
+@@ -637,7 +637,7 @@
+ 		}
+ 
+ 		if(FD_ISSET(insock, &c_iofds)) {
+-			if((bytes = read(insock, buf, sizeof(buf))) <= 0)
++			if((bytes = read(insock, buf, bufsize)) <= 0)
+ 				break;
+ #ifndef NO_FTP
+ 			if (ftp & FTP_PORT)
+@@ -652,7 +652,7 @@
+ 			bytes_out += bytes;
+ 		}
+ 		if(FD_ISSET(outsock, &c_iofds)) {
+-			if((bytes = read(outsock, buf, sizeof(buf))) <= 0)
++			if((bytes = read(outsock, buf, bufsize)) <= 0)
+ 				break;
+ 			/* if we're correcting for PASV on ftp redirections, then
+ 			   fix buf and bytes to have the new address, among other
+@@ -689,6 +689,7 @@
+ 		syslog(LOG_NOTICE, "disconnect %d secs, %ld in %ld out",
+ 		       (end_time - start_time), bytes_in, bytes_out);
+ 	}
++	free(buf);
+ 	return;
+ }
+ 
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 07_cosmetics.dpatch by Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Cosmetic fixes which could be applied upstream
+
+@DPATCH@
+diff -urNad redir-2.2.1~/redir.man redir-2.2.1/redir.man
+--- redir-2.2.1~/redir.man	2005-10-22 21:41:51.284918168 -0400
++++ redir-2.2.1/redir.man	2005-10-22 21:42:42.115190792 -0400
+@@ -73,7 +73,7 @@
+ Specify program name to be used for TCP wrapper checks and syslog logging.
+ .TP
+ .B --timeout
+-Timeout and close the connection after n seconds on inactivity.
++Timeout and close the connection after n seconds of inactivity.
+ .TP
+ .B \--syslog
+ Log information to syslog.
+@@ -90,7 +90,7 @@
+ undesirable. 
+ .TP
+ .B \--transproxy
+-On a linux system with transparany proxying enables, causes redir to
++On a linux system with transparent proxying enabled, causes redir to
+ make connections appear as if they had come from their true origin.
+ (see transproxy.txt in the source archive)
+ .TP
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 08_add_wrappers.dpatch by Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Enabling TCP wrapper support
+
+@DPATCH@
+
+--- redir-2.2.1.orig/Makefile
++++ redir-2.2.1/Makefile
+@@ -9,8 +9,8 @@
+ # if you would like support for TCP wrappers (and have libwrap.a
+ # installed), remove these comments.
+ 
+-WRAP_CFLAGS = # -DUSE_TCP_WRAPPERS 
+-WRAP_LIBS = # -lwrap
++WRAP_CFLAGS = -DUSE_TCP_WRAPPERS 
++WRAP_LIBS = -lwrap
+ 
+ # if your system needs any additional libraries (solaris, for example, 
+ # needs the ones commented out below), edit this line.
+
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 09_add_linux_software_map.dpatch by Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Add linux software map file
+
+@DPATCH@
+
+--- redir-2.2.1.orig/redir-2.2.lsm
++++ redir-2.2.1/redir-2.2.lsm
+@@ -0,0 +1,11 @@
++Begin3
++Title:   redir
++Version:  2.2
++Entered-date:  15DEC1999
++Description:  TCP Port redirector (for firewalls etc).
++Keywords:  tcp port redirector bouncer proxy
++Author:   sammy@oh.verio.com
++Primary-site:  sunsite.unc.edu /pub/Linux/system/Network/daemons
++   39936 redir-2.2.tar.gz
++Copying-policy:  GPL
++End
+
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 15_deb_cosmetics.dpatch by Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Cosmetic changes applicable only to debian
+
+@DPATCH@
+diff -urNad redir-2.2.1~/redir.man redir-2.2.1/redir.man
+--- redir-2.2.1~/redir.man	2005-10-22 21:47:44.067287096 -0400
++++ redir-2.2.1/redir.man	2005-10-22 21:48:34.218662928 -0400
+@@ -92,7 +92,7 @@
+ .B \--transproxy
+ On a linux system with transparent proxying enabled, causes redir to
+ make connections appear as if they had come from their true origin.
+-(see transproxy.txt in the source archive)
++(see /usr/share/doc/redir/transproxy.txt)
+ .TP
+ .B \--connect
+ Redirects connections through an HTTP proxy which supports the CONNECT 
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 20_do_not_strip.dpatch by Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: don't strip by default.  let dh_strip take care of it.
+
+@DPATCH@
+diff -urNad redir-2.2.1~/Makefile redir-2.2.1/Makefile
+--- redir-2.2.1~/Makefile	2007-08-15 14:53:41.908911693 -0400
++++ redir-2.2.1/Makefile	2007-08-15 14:53:59.409909018 -0400
+@@ -33,7 +33,7 @@
+ OBJS = redir.o $(GETOPT_OBJS)
+ 
+ CFLAGS = -O2 -Wall --pedantic $(STR_CFLAGS) $(WRAP_CFLAGS) $(EXTRA_CFLAGS)
+-LDFLAGS = -s
++LDFLAGS = # -s
+ 
+ # solaris, and others, may also need these libraries to link
+ # also edit here if you're using the TCP wrappers code
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 25_fix_setsockopt.dpatch by Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Ensure that the server socket has SO_REUSEADDR and SO_LINGER set properly.
+
+@DPATCH@
+diff -urNad redir~/redir.c redir/redir.c
+--- redir~/redir.c	2009-03-03 17:35:12.022427586 -0500
++++ redir/redir.c	2009-03-03 17:45:28.998426896 -0500
+@@ -90,8 +90,8 @@
+ /* let's set up some globals... */
+ int dodebug = 0;
+ int dosyslog = 0;
+-unsigned char reuse_addr = 1;
+-unsigned char linger_opt = 0;
++int reuse_addr = 1; /* allow address reuse */
++struct linger linger_opt = { 0, 0}; /* do not linger */
+ char * bind_addr = NULL;
+ struct sockaddr_in addr_out;
+ int timeout = 0;
+@@ -906,6 +906,7 @@
+ 
+ 	int servsock;
+ 	struct sockaddr_in server;
++	int ret;
+      
+ 	/*
+ 	 * Get a socket to work with.  This socket will
+@@ -944,8 +945,30 @@
+ 		server.sin_addr.s_addr = htonl(inet_addr("0.0.0.0"));
+ 	}
+      
+-	setsockopt(servsock, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
+-	setsockopt(servsock, SOL_SOCKET, SO_LINGER, &linger_opt, sizeof(SO_LINGER)); 
++	ret = setsockopt(servsock, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
++	if (ret != 0) {
++		if(fail) {
++			return -1;
++		}
++		else {
++			perror("server: setsockopt (SO_REUSEADDR)");
++			if (dosyslog)
++				syslog(LOG_ERR, "setsockopt failed with SO_REUSEADDR: %s",strerror(errno));
++			exit(1);
++		}
++	}
++	ret = setsockopt(servsock, SOL_SOCKET, SO_LINGER, &linger_opt, sizeof(linger_opt)); 
++	if (ret != 0) {
++		if(fail) {
++			return -1;
++		}
++		else {
++			perror("server: setsockopt (SO_LINGER)");
++			if (dosyslog)
++				syslog(LOG_ERR, "setsockopt failed with SO_LINGER: %s",strerror(errno));
++			exit(1);
++		}
++	}
+      
+ 	/*
+ 	 * Try to bind the address to the socket.
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 30_fix_manpage.dpatch by Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Clean up questionable formatting in man page.
+
+@DPATCH@
+diff -urNad redir~/redir.man redir/redir.man
+--- redir~/redir.man	2009-03-03 18:55:37.790428922 -0500
++++ redir/redir.man	2009-03-03 18:58:48.486428715 -0500
+@@ -1,43 +1,42 @@
+-.PU
+ .TH REDIR 1 local
+ .SH NAME
+-redir \- redirect tcp connections
++redir - redirect tcp connections
+ .SH SYNOPSIS
+ .ll +8
+ .B redir
+-.RB [ \--laddr=incoming.ip.address ]
+-.RB [ \--caddr=host ]
+-.RB [ \--debug ]
+-.RB [ \--syslog 
+-.RB [ \--name=str ] 
+-.RB [ \--timeout=n ]
+-.RB [ \--bind_addr=my.other.ip.address ]
+-.RB [ \--ftp=type ]
+-.RB [ \--transproxy ]
+-.RB [ \--connect=host:port ]
+-.I --lport=port
+-.I --cport=port
+-.RB [ \--bufsize=n ]
+-.RB [ \--max_bandwidth=n ]
+-.RB [ \--random_wait=n ]
+-.RB [ \--wait_in_out=n ]
++.RB [ \-\-laddr=incoming.ip.address ]
++.RB [ \-\-caddr=host ]
++.RB [ \-\-debug ]
++.RB [ \-\-syslog 
++.RB [ \-\-name=str ] 
++.RB [ \-\-timeout=n ]
++.RB [ \-\-bind_addr=my.other.ip.address ]
++.RB [ \-\-ftp=type ]
++.RB [ \-\-transproxy ]
++.RB [ \-\-connect=host:port ]
++.I \-\-lport=port
++.I \-\-cport=port
++.RB [ \-\-bufsize=n ]
++.RB [ \-\-max_bandwidth=n ]
++.RB [ \-\-random_wait=n ]
++.RB [ \-\-wait_in_out=n ]
+ .ll -8
+ .br
+ .B redir
+-.RB \--inetd
+-.RB [ \--caddr=host ]
+-.RB [ \--debug ]
+-.RB [ \--syslog 
+-.RB [ \--name=str ] 
+-.RB [ \--timeout=n ]
+-.RB [ \--ftp=type ]
+-.RB [ \--transproxy ]
+-.RB [ \--connect=host:port ]
+-.I --cport=port
+-.RB [ \--bufsize=n ]
+-.RB [ \--max_bandwidth=n ]
+-.RB [ \--random_wait=n ]
+-.RB [ \--wait_in_out=n ]
++.RB \-\-inetd
++.RB [ \-\-caddr=host ]
++.RB [ \-\-debug ]
++.RB [ \-\-syslog ]
++.RB [ \-\-name=str ] 
++.RB [ \-\-timeout=n ]
++.RB [ \-\-ftp=type ]
++.RB [ \-\-transproxy ]
++.RB [ \-\-connect=host:port ]
++.I \-\-cport=port
++.RB [ \-\-bufsize=n ]
++.RB [ \-\-max_bandwidth=n ]
++.RB [ \-\-random_wait=n ]
++.RB [ \-\-wait_in_out=n ]
+ .ll -8
+ .br
+ .SH DESCRIPTION
+@@ -49,74 +48,73 @@
+ Depending on how redir was compiled, not all options may be available.
+ .SH OPTIONS
+ .TP
+-.B \--lport
++.B \-\-lport
+ Specifies port to listen for connections on (when not running from inetd)
+ .TP
+-.B \--laddr
++.B \-\-laddr
+ IP address to bind to when listening for connections (when not
+ running from inetd) 
+ .TP
+-.B \--cport
++.B \-\-cport
+ Specifies port to connect to.
+ .TP
+-.B \--caddr
++.B \-\-caddr
+ Specifies remote host to connect to. (localhost if omitted)
+ .TP
+-.B \--inetd
++.B \-\-inetd
+ Run as a process started from inetd, with the connection passed as stdin
+ and stdout on startup.
+ .TP
+-.B \--debug
++.B \-\-debug
+ Write debug output to stderr or syslog.
+ .TP
+-.B \--name
++.B \-\-name
+ Specify program name to be used for TCP wrapper checks and syslog logging.
+ .TP
+-.B --timeout
++.B \-\-timeout
+ Timeout and close the connection after n seconds of inactivity.
+ .TP
+-.B \--syslog
++.B \-\-syslog
+ Log information to syslog.
+ .TP
+-.B \--bind_addr
++.B \-\-bind_addr
+ Forces redir to pick a specific address/interface to bind to when it listens 
+ for incoming connections. 
+ .TP
+-.B \--ftp
++.B \-\-ftp
+ When using redir for an FTP server, this will cause redir to also
+ redirect ftp connections.  Type should be specified as either "port",
+ "pasv", or "both", to specify what type of FTP connection to handle.
+-Note that --transproxy often makes one or the other (generally port)
++Note that \-\-transproxy often makes one or the other (generally port)
+ undesirable. 
+ .TP
+-.B \--transproxy
++.B \-\-transproxy
+ On a linux system with transparent proxying enabled, causes redir to
+ make connections appear as if they had come from their true origin.
+ (see /usr/share/doc/redir/transproxy.txt)
+ .TP
+-.B \--connect
++.B \-\-connect
+ Redirects connections through an HTTP proxy which supports the CONNECT 
+-command.  Specify the address and port of the proxy using --caddr and
+---cport.  --connect requires the hostname and port which the HTTP
++command.  Specify the address and port of the proxy using \-\-caddr and
++\-\-cport.  \-\-connect requires the hostname and port which the HTTP
+ proxy will be asked to connect to.
+ .TP
+-.B \--bufsize n
++.B \-\-bufsize n
+ Set the bufsize (defaut 4096) in bytes. Can be used combined with
+---max_bandwidth or --random_wait to simulate a slow connection.
++\-\-max_bandwidth or \-\-random_wait to simulate a slow connection.
+ .TP
+-.B \--max_bandwidth n
++.B \-\-max_bandwidth n
+ Reduce the bandwidth to be no more than n bits/sec.  The algorithme is
+ basic, the goal is to simulate a slow connection, so there is no pic
+ acceptance.
+ .TP
+-.B \--random_wait n
++.B \-\-random_wait n
+ Wait between 0 and 2 x n milliseconds before each "packet". A "packet" is
+ a bloc of data read in one time by redir. A "packet" size is always less
+-than the bufsize (see also --bufsize).
++than the bufsize (see also \-\-bufsize).
+ .TP
+-.B \--wait_in_out n
+-Apply --max_bandwidth and --random_wait for input if n=1, output if n=2 and
++.B \-\-wait_in_out n
++Apply \-\-max_bandwidth and \-\-random_wait for input if n=1, output if n=2 and
+ both if n=3.
+ .SH "SEE ALSO"
+ inetd(1)
+-

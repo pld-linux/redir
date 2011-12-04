@@ -3,7 +3,7 @@ Summary(pl.UTF-8):	Przekierowywanie połączeń TCP
 Summary(pt_BR.UTF-8):	Redir é um redirecionador de conexões
 Name:		redir
 Version:	2.2.1
-Release:	3
+Release:	4
 License:	GPL
 Group:		Applications/Networking
 Source0:	http://sammy.net/~sammy/hacks/%{name}-%{version}.tar.gz
@@ -31,7 +31,7 @@ Redir é um redirecionador de conexões.
 
 %build
 %{__make} \
-	OPT_FLAGS="%{rpmcflags}" \
+	EXTRA_CFLAGS="%{rpmcflags} %{rpmcppflags}" \
 	CC="%{__cc}"
 
 %install
