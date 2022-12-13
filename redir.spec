@@ -2,15 +2,15 @@ Summary:	redirect TCP connections
 Summary(pl.UTF-8):	Przekierowywanie połączeń TCP
 Summary(pt_BR.UTF-8):	Redir é um redirecionador de conexões
 Name:		redir
-Version:	2.2.1
-Release:	4
+Version:	3.3
+Release:	1
 License:	GPL
 Group:		Applications/Networking
-Source0:	http://sammy.net/~sammy/hacks/%{name}-%{version}.tar.gz
-# Source0-md5:	4342fadac30504c86c8db7beefe01995
-Patch0:		%{name}-debian.patch
-Patch1:		%{name}-passive-ftp.patch
-URL:		http://sammy.net/~sammy/hacks/
+Source0:	https://github.com/troglobit/redir/releases/download/v%{version}/%{name}-%{version}.tar.xz
+# Source0-md5:	b452e1ca6faded7bab9c76dd61d9d983
+URL:		https://github.com/troglobit/redir/
+BuildRequires:	autoconf
+BuildRequires:	automake
 BuildRequires:	libwrap-devel
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
@@ -27,25 +27,26 @@ Redir é um redirecionador de conexões.
 
 %prep
 %setup  -q
-%patch0 -p1
 
 %build
-%{__make} \
-	EXTRA_CFLAGS="%{rpmcflags} %{rpmcppflags}" \
-	CC="%{__cc}"
+%{__aclocal}
+%{__autoconf}
+%{__automake}
+
+%configure
+%{__make}
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT{%{_bindir},%{_mandir}/man1}
 
-install redir $RPM_BUILD_ROOT%{_bindir}
-install redir.man $RPM_BUILD_ROOT%{_mandir}/man1
+%{__make} install \
+    DESTDIR=$RPM_BUILD_ROOT
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644,root,root,755)
-%doc README trans*.txt
-%attr(755,root,root) %{_bindir}/*
-%{_mandir}/man*/*
+%doc README.md trans*.txt
+%attr(755,root,root) %{_bindir}/redir
+%{_mandir}/man1/redir.1*
